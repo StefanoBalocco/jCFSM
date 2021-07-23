@@ -1,14 +1,14 @@
-'use strict';
 namespace jCFSM {
 	export type FunctionOnEnter = ( currentState: string, nextState: string ) => ( void | Promise<void> );
 	export type FunctionOnLeave = ( currentState: string, prevState: string ) => ( void | Promise<void> );
-	export type FunctionOnTransition = () => ( void | Promise<void> );
+	export type FunctionOnTransitionAfter = () => ( void | Promise<void> );
+	export type FunctionOnTransitionBefore = () => ( any | Promise<any> );
 
 	class StateMachine {
 		private _inTransition: boolean = false;
 		private _currentState: string;
 		private _states: { [ key: string ]: { OnEnter: FunctionOnEnter[], OnLeave: FunctionOnLeave[] } } = {};
-		private _transitions: { [ key: string ]: { [ key: string ]: { OnBefore: FunctionOnTransition[], OnAfter: FunctionOnTransition[] } } } = {};
+		private _transitions: { [ key: string ]: { [ key: string ]: { OnBefore: FunctionOnTransitionBefore[], OnAfter: FunctionOnTransitionAfter[] } } } = {};
 
 		constructor( initialState: string ) {
 			this.StateAdd( initialState );
@@ -116,7 +116,7 @@ namespace jCFSM {
 			return ( returnValue );
 		}
 
-		public TransitionOnBeforeAdd( from: string, to: string, func: FunctionOnTransition ): boolean {
+		public TransitionOnBeforeAdd( from: string, to: string, func: FunctionOnTransitionBefore ): boolean {
 			let returnValue = false;
 			if( ( 'undefined' !== typeof ( this._states[ from ] ) ) && ( 'undefined' !== typeof ( this._states[ to ] ) ) ) {
 				if( 'undefined' !== typeof ( this._transitions[ from ][ to ] ) ) {
@@ -127,7 +127,7 @@ namespace jCFSM {
 			return ( returnValue );
 		}
 
-		public TransitionOnBeforeDel( from: string, to: string, func: FunctionOnTransition ): boolean {
+		public TransitionOnBeforeDel( from: string, to: string, func: FunctionOnTransitionBefore ): boolean {
 			let returnValue = false;
 			if( ( 'undefined' !== typeof ( this._states[ from ] ) ) && ( 'undefined' !== typeof ( this._states[ to ] ) ) ) {
 				if( 'undefined' !== typeof ( this._transitions[ from ][ to ] ) ) {
@@ -141,7 +141,7 @@ namespace jCFSM {
 			return ( returnValue );
 		}
 
-		public TransitionOnAfterAdd( from: string, to: string, func: FunctionOnTransition ): boolean {
+		public TransitionOnAfterAdd( from: string, to: string, func: FunctionOnTransitionAfter ): boolean {
 			let returnValue = false;
 			if( ( 'undefined' !== typeof ( this._states[ from ] ) ) && ( 'undefined' !== typeof ( this._states[ to ] ) ) ) {
 				if( 'undefined' !== typeof ( this._transitions[ from ][ to ] ) ) {
@@ -152,7 +152,7 @@ namespace jCFSM {
 			return ( returnValue );
 		}
 
-		public TransitionOnAfterDel( from: string, to: string, func: FunctionOnTransition ): boolean {
+		public TransitionOnAfterDel( from: string, to: string, func: FunctionOnTransitionAfter ): boolean {
 			let returnValue = false;
 			if( ( 'undefined' !== typeof ( this._states[ from ] ) ) && ( 'undefined' !== typeof ( this._states[ to ] ) ) ) {
 				if( 'undefined' !== typeof ( this._transitions[ from ][ to ] ) ) {
@@ -177,50 +177,51 @@ namespace jCFSM {
 				if( 'undefined' !== typeof ( this._states[ nextState ] ) ) {
 					if( ( 'undefined' !== typeof ( this._transitions[ this._currentState ] ) ) && ( 'undefined' !== typeof ( this._transitions[ this._currentState ][ nextState ] ) ) ) {
 						returnValue = true;
-						let countFirstLevel;
-						countFirstLevel = this._states[ this._currentState ].OnLeave.length;
-						for( let indexFirstLevel = 0; indexFirstLevel < countFirstLevel; indexFirstLevel++ ) {
-							if( 'function' === typeof ( this._states[ this._currentState ].OnLeave[ indexFirstLevel ] ) ) {
-								if( 'AsyncFunction' === this._states[ this._currentState ].OnLeave[ indexFirstLevel ].constructor.name ) {
-									await this._states[ this._currentState ].OnLeave[ indexFirstLevel ]( this._currentState, nextState );
+						let countFL;
+						// Check if I can enter the new state: in case a function return false, abort
+						countFL = this._transitions[ this._currentState ][ nextState ].OnBefore.length;
+						for( let indexFL = 0; ( returnValue && ( indexFL < countFL ) ); indexFL++ ) {
+							if( 'function' === typeof ( this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFL ] ) ) {
+								let tmpValue = null;
+								if( 'AsyncFunction' === this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFL ].constructor.name ) {
+									tmpValue = await this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFL ]();
+								} else {
+									tmpValue = this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFL ]();
 								}
-								else {
-									this._states[ this._currentState ].OnLeave[ indexFirstLevel ]( this._currentState, nextState );
-								}
+								returnValue = ( false !== tmpValue );
 							}
 						}
-						countFirstLevel = this._transitions[ this._currentState ][ nextState ].OnBefore.length;
-						for( let indexFirstLevel = 0; indexFirstLevel < countFirstLevel; indexFirstLevel++ ) {
-							if( 'function' === typeof ( this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFirstLevel ] ) ) {
-								if( 'AsyncFunction' === this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFirstLevel ].constructor.name ) {
-									await this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFirstLevel ]();
-								}
-								else {
-									this._transitions[ this._currentState ][ nextState ].OnBefore[ indexFirstLevel ]();
-								}
-							}
-						}
-						let previousState: string = this._currentState;
-						this._currentState = nextState;
-						countFirstLevel = this._transitions[ previousState ][ this._currentState ].OnAfter.length;
-						for( let indexFirstLevel = 0; indexFirstLevel < countFirstLevel; indexFirstLevel++ ) {
-							if( 'function' === typeof ( this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFirstLevel ] ) ) {
-								if( 'AsyncFunction' === this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFirstLevel ].constructor.name ) {
-									await this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFirstLevel ]();
-								}
-								else {
-									this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFirstLevel ]();
+						if( returnValue ) {
+							countFL = this._states[ this._currentState ].OnLeave.length;
+							for( let indexFL = 0; indexFL < countFL; indexFL++ ) {
+								if( 'function' === typeof ( this._states[ this._currentState ].OnLeave[ indexFL ] ) ) {
+									if( 'AsyncFunction' === this._states[ this._currentState ].OnLeave[ indexFL ].constructor.name ) {
+										await this._states[ this._currentState ].OnLeave[ indexFL ]( this._currentState, nextState );
+									} else {
+										this._states[ this._currentState ].OnLeave[ indexFL ]( this._currentState, nextState );
+									}
 								}
 							}
-						}
-						countFirstLevel = this._states[ this._currentState ].OnEnter.length;
-						for( let indexFirstLevel = 0; indexFirstLevel < countFirstLevel; indexFirstLevel++ ) {
-							if( 'function' === typeof ( this._states[ this._currentState ].OnEnter[ indexFirstLevel ] ) ) {
-								if( 'AsyncFunction' === this._states[ this._currentState ].OnEnter[ indexFirstLevel ].constructor.name ) {
-									await this._states[ this._currentState ].OnEnter[ indexFirstLevel ]( this._currentState, previousState );
+							let previousState: string = this._currentState;
+							this._currentState = nextState;
+							countFL = this._transitions[ previousState ][ this._currentState ].OnAfter.length;
+							for( let indexFL = 0; indexFL < countFL; indexFL++ ) {
+								if( 'function' === typeof ( this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFL ] ) ) {
+									if( 'AsyncFunction' === this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFL ].constructor.name ) {
+										await this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFL ]();
+									} else {
+										this._transitions[ previousState ][ this._currentState ].OnAfter[ indexFL ]();
+									}
 								}
-								else {
-									this._states[ this._currentState ].OnEnter[ indexFirstLevel ]( this._currentState, previousState );
+							}
+							countFL = this._states[ this._currentState ].OnEnter.length;
+							for( let indexFL = 0; indexFL < countFL; indexFL++ ) {
+								if( 'function' === typeof ( this._states[ this._currentState ].OnEnter[ indexFL ] ) ) {
+									if( 'AsyncFunction' === this._states[ this._currentState ].OnEnter[ indexFL ].constructor.name ) {
+										await this._states[ this._currentState ].OnEnter[ indexFL ]( this._currentState, previousState );
+									} else {
+										this._states[ this._currentState ].OnEnter[ indexFL ]( this._currentState, previousState );
+									}
 								}
 							}
 						}
@@ -237,7 +238,7 @@ namespace jCFSM {
 	}
 }
 // @ts-ignore
-if( 'object' === typeof ( exports ) ) {
+if( 'object' === typeof exports ) {
 	// @ts-ignore
 	exports.Create = jCFSM.Create;
 }

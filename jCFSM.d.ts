@@ -1,8 +1,10 @@
 declare namespace jCFSM {
     export type FunctionOnEnter = (currentState: string, nextState: string) => (void | Promise<void>);
     export type FunctionOnLeave = (currentState: string, prevState: string) => (void | Promise<void>);
-    export type FunctionOnTransition = () => (void | Promise<void>);
+    export type FunctionOnTransitionAfter = () => (void | Promise<void>);
+    export type FunctionOnTransitionBefore = () => (any | Promise<any>);
     class StateMachine {
+        private _inTransition;
         private _currentState;
         private _states;
         private _transitions;
@@ -15,10 +17,10 @@ declare namespace jCFSM {
         StateOnLeaveDel(state: string, func: FunctionOnLeave): boolean;
         TransitionAdd(from: string, to: string): boolean;
         TransitionDel(from: string, to: string): boolean;
-        TransitionOnBeforeAdd(from: string, to: string, func: FunctionOnTransition): boolean;
-        TransitionOnBeforeDel(from: string, to: string, func: FunctionOnTransition): boolean;
-        TransitionOnAfterAdd(from: string, to: string, func: FunctionOnTransition): boolean;
-        TransitionOnAfterDel(from: string, to: string, func: FunctionOnTransition): boolean;
+        TransitionOnBeforeAdd(from: string, to: string, func: FunctionOnTransitionBefore): boolean;
+        TransitionOnBeforeDel(from: string, to: string, func: FunctionOnTransitionBefore): boolean;
+        TransitionOnAfterAdd(from: string, to: string, func: FunctionOnTransitionAfter): boolean;
+        TransitionOnAfterDel(from: string, to: string, func: FunctionOnTransitionAfter): boolean;
         StateGet(): string;
         StateSet(nextState: string): Promise<boolean>;
     }
