@@ -158,53 +158,53 @@ var jCFSM;
                 if ('undefined' !== typeof (this._states[nextState])) {
                     if (('undefined' !== typeof (this._transitions[this._currentState])) && ('undefined' !== typeof (this._transitions[this._currentState][nextState]))) {
                         returnValue = true;
-                        let countFL;
-                        countFL = this._transitions[this._currentState][nextState].OnBefore.length;
-                        for (let indexFL = 0; (returnValue && (indexFL < countFL)); indexFL++) {
-                            if ('function' === typeof (this._transitions[this._currentState][nextState].OnBefore[indexFL])) {
+                        let cFL;
+                        cFL = this._transitions[this._currentState][nextState].OnBefore.length;
+                        for (let iFL = 0; (returnValue && (iFL < cFL)); iFL++) {
+                            if ('function' === typeof (this._transitions[this._currentState][nextState].OnBefore[iFL])) {
                                 let tmpValue = null;
-                                if ('AsyncFunction' === this._transitions[this._currentState][nextState].OnBefore[indexFL].constructor.name) {
-                                    tmpValue = await this._transitions[this._currentState][nextState].OnBefore[indexFL]();
+                                if ('AsyncFunction' === this._transitions[this._currentState][nextState].OnBefore[iFL].constructor.name) {
+                                    tmpValue = await this._transitions[this._currentState][nextState].OnBefore[iFL]();
                                 }
                                 else {
-                                    tmpValue = this._transitions[this._currentState][nextState].OnBefore[indexFL]();
+                                    tmpValue = this._transitions[this._currentState][nextState].OnBefore[iFL]();
                                 }
                                 returnValue = (false !== tmpValue);
                             }
                         }
                         if (returnValue) {
-                            countFL = this._states[this._currentState].OnLeave.length;
-                            for (let indexFL = 0; indexFL < countFL; indexFL++) {
-                                if ('function' === typeof (this._states[this._currentState].OnLeave[indexFL])) {
-                                    if ('AsyncFunction' === this._states[this._currentState].OnLeave[indexFL].constructor.name) {
-                                        await this._states[this._currentState].OnLeave[indexFL](this._currentState, nextState);
+                            cFL = this._states[this._currentState].OnLeave.length;
+                            for (let iFL = 0; iFL < cFL; iFL++) {
+                                if ('function' === typeof (this._states[this._currentState].OnLeave[iFL])) {
+                                    if ('AsyncFunction' === this._states[this._currentState].OnLeave[iFL].constructor.name) {
+                                        await this._states[this._currentState].OnLeave[iFL](this._currentState, nextState);
                                     }
                                     else {
-                                        this._states[this._currentState].OnLeave[indexFL](this._currentState, nextState);
+                                        this._states[this._currentState].OnLeave[iFL](this._currentState, nextState);
                                     }
                                 }
                             }
                             let previousState = this._currentState;
                             this._currentState = nextState;
-                            countFL = this._transitions[previousState][this._currentState].OnAfter.length;
-                            for (let indexFL = 0; indexFL < countFL; indexFL++) {
-                                if ('function' === typeof (this._transitions[previousState][this._currentState].OnAfter[indexFL])) {
-                                    if ('AsyncFunction' === this._transitions[previousState][this._currentState].OnAfter[indexFL].constructor.name) {
-                                        await this._transitions[previousState][this._currentState].OnAfter[indexFL]();
+                            cFL = this._transitions[previousState][this._currentState].OnAfter.length;
+                            for (let iFL = 0; iFL < cFL; iFL++) {
+                                if ('function' === typeof (this._transitions[previousState][this._currentState].OnAfter[iFL])) {
+                                    if ('AsyncFunction' === this._transitions[previousState][this._currentState].OnAfter[iFL].constructor.name) {
+                                        await this._transitions[previousState][this._currentState].OnAfter[iFL]();
                                     }
                                     else {
-                                        this._transitions[previousState][this._currentState].OnAfter[indexFL]();
+                                        this._transitions[previousState][this._currentState].OnAfter[iFL]();
                                     }
                                 }
                             }
-                            countFL = this._states[this._currentState].OnEnter.length;
-                            for (let indexFL = 0; indexFL < countFL; indexFL++) {
-                                if ('function' === typeof (this._states[this._currentState].OnEnter[indexFL])) {
-                                    if ('AsyncFunction' === this._states[this._currentState].OnEnter[indexFL].constructor.name) {
-                                        await this._states[this._currentState].OnEnter[indexFL](this._currentState, previousState);
+                            cFL = this._states[this._currentState].OnEnter.length;
+                            for (let iFL = 0; iFL < cFL; iFL++) {
+                                if ('function' === typeof (this._states[this._currentState].OnEnter[iFL])) {
+                                    if ('AsyncFunction' === this._states[this._currentState].OnEnter[iFL].constructor.name) {
+                                        await this._states[this._currentState].OnEnter[iFL](this._currentState, previousState);
                                     }
                                     else {
-                                        this._states[this._currentState].OnEnter[indexFL](this._currentState, previousState);
+                                        this._states[this._currentState].OnEnter[iFL](this._currentState, previousState);
                                     }
                                 }
                             }
