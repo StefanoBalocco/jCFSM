@@ -1,7 +1,8 @@
-export type FunctionOnEnter = (currentState: string, prevState: string) => (void | Promise<void>);
-export type FunctionOnLeave = (currentState: string, nextState: string) => (void | Promise<void>);
-export type FunctionOnTransitionAfter = () => (void | Promise<void>);
-export type FunctionOnTransitionBefore = () => (boolean | Promise<boolean>);
+type Promisable<T> = T | Promise<T>;
+export type FunctionOnEnter = (currentState: string, prevState: string) => Promisable<void>;
+export type FunctionOnLeave = (currentState: string, nextState: string) => Promisable<void>;
+export type FunctionOnTransitionAfter = () => Promisable<void>;
+export type FunctionOnTransitionBefore = () => Promisable<boolean>;
 export default class jCFSM {
     private _inTransition;
     private _currentState;
@@ -23,3 +24,4 @@ export default class jCFSM {
     StateGet(): string;
     StateSet(nextState: string): Promise<boolean>;
 }
+export {};
